@@ -18,20 +18,20 @@ import time
 from pprint import pformat
 def print_result(hint, result):
     def encode(obj):
-        if type(obj) is unicode:
+        if type(obj) is str:
             return obj.encode('utf-8')
         if type(obj) is dict:
-            return {encode(k): encode(v) for (k, v) in obj.iteritems()}
+            return {encode(k): encode(v) for (k, v) in obj.items()}
         if type(obj) is list:
             return [encode(i) for i in obj]
         return obj
-    print hint
+    print(hint)
     result = encode(result)
-    print '\n'.join(['  ' + i for i in pformat(result, width = 75).split('\n')])
+    print('\n'.join(['  ' + i for i in pformat(result, width = 75).split('\n')]))
 
 # First import the API class from the SDK
 # 首先，导入SDK中的API类
-from facepp import API
+from .facepp import API
 
 api = API(API_KEY, API_SECRET)
 
@@ -52,13 +52,13 @@ TARGET_IMAGE = IMAGE_DIR + '4.jpg'
 FACES = {name: api.detection.detect(url = url)
         for name, url in PERSONS}
 
-for name, face in FACES.iteritems():
+for name, face in FACES.items():
     print_result(name, face)
 
 
 # Step 2: create persons using the face_id
 # 步骤2：引用face_id，创建新的person
-for name, face in FACES.iteritems():
+for name, face in FACES.items():
     rst = api.person.create(
             person_name = name, face_id = face['face'][0]['face_id'])
     print_result('create person {}'.format(name), rst)
@@ -67,7 +67,7 @@ for name, face in FACES.iteritems():
 # 步骤3：.创建Group，将之前创建的Person加入这个Group
 rst = api.group.create(group_name = 'test')
 print_result('create group', rst)
-rst = api.group.add_person(group_name = 'test', person_name = FACES.iterkeys())
+rst = api.group.add_person(group_name = 'test', person_name = iter(FACES.keys()))
 print_result('add these persons to group', rst)
 
 # Step 4: train the model
@@ -83,14 +83,14 @@ print_result('wait async', rst)
 # 步骤5：识别新图中的Face
 rst = api.recognition.identify(group_name = 'test', url = TARGET_IMAGE)
 print_result('recognition result', rst)
-print '=' * 60
-print 'The person with highest confidence:', \
-        rst['face'][0]['candidate'][0]['person_name']
+print('=' * 60)
+print('The person with highest confidence:', \
+        rst['face'][0]['candidate'][0]['person_name'])
 
 # Finally, delete the persons and group because they are no longer needed
 # 最终，删除无用的person和group
 api.group.delete(group_name = 'test')
-api.person.delete(person_name = FACES.iterkeys())
+api.person.delete(person_name = iter(FACES.keys()))
 
 # Congratulations! You have finished this tutorial, and you can continue
 # reading our API document and start writing your own App using Face++ API!

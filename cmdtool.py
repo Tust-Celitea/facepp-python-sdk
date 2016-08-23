@@ -44,12 +44,12 @@ def init():
         exec(f.read())
 
     srv = locals().get('SERVER')
-    from facepp import API
+    from .facepp import API
     return API(API_KEY, API_SECRET, srv = srv)
 
 api = init()
 
-from facepp import API, File
+from .facepp import API, File
 
 del init
 

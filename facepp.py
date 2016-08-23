@@ -35,8 +35,8 @@ DEBUG_LEVEL = 1
 
 import sys
 import socket
-import urllib
-import urllib2
+import urllib.request, urllib.parse, urllib.error
+import urllib.request, urllib.error, urllib.parse
 import json
 import os
 import os.path
@@ -46,7 +46,7 @@ import mimetypes
 import time
 import tempfile
 from collections import Iterable
-from cStringIO import StringIO
+from io import StringIO
 
 class File(object):
     """an object representing a local file"""
@@ -163,7 +163,7 @@ class API(object):
         """wait for asynchronous operations to complete"""
         while True:
             rst = self.info.get_session(session_id = session_id)
-            if rst['status'] != u'INQUEUE':
+            if rst['status'] != 'INQUEUE':
                 return rst
             _print_debug(rst)
             time.sleep(referesh_interval)
@@ -205,20 +205,20 @@ class _APIProxy(object):
             raise TypeError('post argument can only be True or False')
         form = _MultiPartForm()
         add_form = False
-        for (k, v) in kargs.iteritems():
+        for (k, v) in list(kargs.items()):
             if isinstance(v, File):
                 add_form = True
                 form.add_file(k, v.get_filename(), v.content)
 
         if post:
             url = self._urlbase
-            for k, v in self._mkarg(kargs).iteritems():
+            for k, v in list(self._mkarg(kargs).items()):
                 form.add_field(k, v)
             add_form = True
         else:
             url = self.geturl(**kargs)
 
-        request = urllib2.Request(url)
+        request = urllib.request.Request(url)
         if add_form:
             body = str(form)
             request.add_header('Content-type', form.get_content_type())
@@ -231,11 +231,11 @@ class _APIProxy(object):
         while True:
             retry -= 1
             try:
-                ret = urllib2.urlopen(request, timeout = self._api.timeout).read()
+                ret = urllib.request.urlopen(request, timeout = self._api.timeout).read()
                 break
-            except urllib2.HTTPError as e:
+            except urllib.error.HTTPError as e:
                 raise APIError(e.code, url, e.read())
-            except (socket.error, urllib2.URLError) as e:
+            except (socket.error, urllib.error.URLError) as e:
                 if retry < 0:
                     raise e
                 _print_debug('caught error: {}; retrying'.format(e))
@@ -252,15 +252,15 @@ class _APIProxy(object):
         """change the argument list (encode value, add api key/secret)
         :return: the new argument list"""
         def enc(x):
-            if isinstance(x, unicode):
+            if isinstance(x, str):
                 return x.encode('utf-8')
             return str(x)
 
         kargs = kargs.copy()
         kargs['api_key'] = self._api.key
         kargs['api_secret'] = self._api.secret
-        for (k, v) in kargs.items():
-            if isinstance(v, Iterable) and not isinstance(v, basestring):
+        for (k, v) in list(kargs.items()):
+            if isinstance(v, Iterable) and not isinstance(v, str):
                 kargs[k] = ','.join([enc(i) for i in v])
             elif isinstance(v, File) or v is None:
                 del kargs[k]
@@ -271,7 +271,7 @@ class _APIProxy(object):
 
     def geturl(self, **kargs):
         """return the request url"""
-        return self._urlbase + '?' + urllib.urlencode(self._mkarg(kargs)) 
+        return self._urlbase + '?' + urllib.parse.urlencode(self._mkarg(kargs)) 
 
     def visit(self, browser = 'chromium', **kargs):
         """visit the url in browser"""
